@@ -1,0 +1,13 @@
+#!/usr/bin/env node 
+
+require('coffee-script/register');
+
+var server = require('../src/main');
+var argv = require('yargs')
+  .alias('d', 'debug')
+  .argv;
+
+server.run(argv);
+
+
+

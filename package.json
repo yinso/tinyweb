@@ -1,0 +1,35 @@
+{
+  "author": "YC <yinso.chen@gmail.com>",
+  "name": "tinyweb",
+  "description": "A small extensible web server",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git://bitbucket.org/yinso/tinyweb.git"
+  },
+  "main": "./lib/main",
+  "engines": {
+    "node": ">= 0.8.4"
+  },
+  "scripts": {
+    "test": "make test",
+    "prepublish": "make"
+  },
+  "dependencies": {
+    "yargs": "=1.3.2",
+    "js-yaml": "=3.2.2",
+    "express": "=4.9.8",
+    "coffee-script": "=1.8.0",
+    "pretty-data": "=0.40.0",
+    "loglet": ">=0.1.0",
+    "cookie-parser": "=1.3.2",
+    "serve-favicon": "=2.0.1",
+    "body-parser": "=1.6.3",
+    "method-override": "=2.1.3",
+    "express-session": "=1.7.5"
+  },
+  "devDependencies": {
+    "testlet": ">= 0.2.0",
+    "coffee-bean": ">=0.3.0"
+  }
+}
