@@ -2,7 +2,7 @@
 author: YC <yinso.chen@gmail.com>
 name: tinyweb
 description: A small extensible web server
-version: 0.1.2
+version: 0.2.0
 repository:
   type: git
   url: git://github.com/yinso/tinyweb.git
@@ -33,5 +33,9 @@ dependencies:
   'express-session': '=1.7.5'
   node-uuid: =1.4.2
   cookie: =0.1.2
+  watch: =0.16.0
+  marked: =0.3.3
+  handlebars: =3.0.2
+  lru-cache: =2.6.1
 devDependencies:
   testlet: '>= 0.2.0'

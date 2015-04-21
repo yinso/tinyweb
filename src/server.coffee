@@ -15,6 +15,7 @@ _ = require 'underscore'
 fs = require 'fs'
 filelet = require 'filelet'
 uuid = require 'node-uuid'
+mdhbs = require './mdhbs'
 
 baseErrorHandler = (options) ->
   (err, req, res, next) ->
@@ -72,7 +73,12 @@ runWithConfig = (config) ->
   app.set 'url', config.url or 'http://localhost'
   app.set 'port', config.port or 8080
   app.set 'view engine', config.views?.engine or 'jade' # 
+  app.engine 'md', mdhbs.renderFile
+  app.engine 'hbs', mdhbs.renderFile
+  app.engine 'html', mdhbs.renderFile
+  app.hbs = mdhbs
   app.addViews path.join(config.BASE_DIR, config.views?.dir or 'views')
+  app.addViews path.join(config.BASE_DIR, config.views?.dir or 'template')
   app.use cookieParser config.session?.secret or signedSecret
   sessionConfig = 
     genid: (req) -> uuid.v4()
