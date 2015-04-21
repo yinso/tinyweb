@@ -5,7 +5,7 @@
   "version": "0.1.2",
   "repository": {
     "type": "git",
-    "url": "git://bitbucket.org/yinso/tinyweb.git"
+    "url": "git://github.com/yinso/tinyweb.git"
   },
   "main": "./lib/main",
   "bin": {
