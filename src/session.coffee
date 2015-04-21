@@ -91,22 +91,28 @@ cookieSession = (options) ->
       req.session = newSession()
     req.sessionID = req.session.id
     hasSentHeaders = false
+    res._writeHead = res.writeHead
+    res.writeHead = (args...) ->
+      if not hasSentHeaders
+        res.emit 'header'
+      res._writeHead args...
     res._write = res.write
-    res.write = (arg...) ->
+    res.write = (args...) ->
       if not hasSentHeaders
         res.emit 'header'
         hasSentHeaders = true
-      res._write arg...
+      res._write args...
     res._end = res.end
-    res.end = (arg...) ->
+    res.end = (args...) ->
       if not hasSentHeaders
         res.emit 'header'
         hasSentHeaders = true
-      res._end arg...
+      res._end args...
 
     written = false
 
     res.on 'header', () ->
+      
       if not written
         cookie =
           if not req.session

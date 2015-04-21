@@ -5,6 +5,9 @@ require('coffee-script/register');
 var server = require('../src/main');
 var argv = require('yargs')
   .alias('d', 'debug')
+  .boolean('static')
+  .alias('s', 'static')
+  .alias('p', 'port')
   .argv;
 
 server.run(argv);

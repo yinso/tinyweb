@@ -45,8 +45,17 @@ setupSSL = (config, app) ->
   app.set 'ssl', options
   https.createServer(options, app).listen options.port
 
+runStatic = (argv) ->
+  app = express()
+  app.set 'port', argv.port or 8080
+  app.use express.static process.cwd()
+  http.createServer(app).listen app.get('port')
+  if argv.ssl
+    setupSSL argv, app
+
 runWithConfig = (config) ->
   loglet.setKeys config.debug or []
+  loglet.log 'tinyweb.runWithConfig', config
   app = express() 
   app.addViews = (viewsDir) ->
     views = app.get 'views'
@@ -59,10 +68,11 @@ runWithConfig = (config) ->
         [ ]
     views.unshift viewsDir
     app.set 'views', views
+  app.set '_config', config
   app.set 'url', config.url or 'http://localhost'
   app.set 'port', config.port or 8080
-  app.set 'view engine', config.views.engine or 'jade' # 
-  app.addViews path.join(config.BASE_DIR, config.views.dir or 'views')
+  app.set 'view engine', config.views?.engine or 'jade' # 
+  app.addViews path.join(config.BASE_DIR, config.views?.dir or 'views')
   app.use cookieParser config.session?.secret or signedSecret
   sessionConfig = 
     genid: (req) -> uuid.v4()
@@ -114,19 +124,22 @@ initLastMiddlewares = (app, config) ->
     middleware.init app, config
 
 run = (argv) ->
-  try
-    BASE_DIR = process.cwd() # this is the current directory that we are interested in setting up the environment for loading...
-    # let's make a static server really quickly... 
-    console.log 'path', BASE_DIR, 'tinyweb.yml', path.join(BASE_DIR, 'tinyweb.yml')
-    configPath = path.join(BASE_DIR, 'tinyweb.yml')
-    loglet.debug 'server.config', configPath
-    config = bean.readFileSync configPath
-    config = _.extend config, argv
-    config.BASE_DIR = BASE_DIR
-    runWithConfig config
-  catch err
-    loglet.error 'server.config:failed', {error: 'config_load_failed', path: configPath}, err
-    process.exit()
+  if argv.static
+    runStatic argv
+  else
+    try
+      BASE_DIR = process.cwd() # this is the current directory that we are interested in setting up the environment for loading...
+      # let's make a static server really quickly... 
+      console.log 'path', BASE_DIR, 'tinyweb.yml', path.join(BASE_DIR, 'tinyweb.yml')
+      configPath = path.join(BASE_DIR, 'tinyweb.yml')
+      loglet.debug 'server.config', configPath
+      config = bean.readFileSync configPath
+      config = _.extend config, argv
+      config.BASE_DIR = BASE_DIR
+      runWithConfig config
+    catch err
+      loglet.error 'server.config:failed', {error: 'config_load_failed', path: configPath}, err
+      process.exit()
   
 
 module.exports = 
