@@ -19,7 +19,7 @@ registerHelpers = (helpers, scope = helpers.name) ->
       handlebars.registerHelper name, val
 
 handlebars.registerHelper 'ifCond', (v1, operator, v2, options)->
-  loglet.log 'ifConf', v1, operator, v2
+  #loglet.log 'ifConf', v1, operator, v2
   switch operator
     when '==', '==='
       return if v1 is v2 then options.fn @ else options.inverse @
@@ -45,7 +45,7 @@ handlebars.registerHelper 'showError', (e) ->
   JSON.stringify e
 
 compileTemplate = (filePath, data, cb) ->
-  loglet.log 'compileTemplate', filePath
+  #loglet.log 'compileTemplate', filePath
   try 
     ext = path.extname filePath
     templateName = path.join path.dirname(filePath), path.basename(filePath, ext)
@@ -90,8 +90,8 @@ renderRelKey = (filePath) ->
 
 renderLayout = (body, options, cb) ->
   if options.layout 
-    #layoutKey = renderRelKey(options.layout)
-    loglet.log 'mdhbs.renderLayout', options.layout, layoutKey, handlebars.partials
+    layoutKey = renderRelKey(options.layout)
+    #loglet.log 'mdhbs.renderLayout', options.layout, layoutKey, handlebars.partials
     if handlebars.partials.hasOwnProperty(layoutKey)
       layoutTemplate = handlebars.partials[layoutKey]
       data = _.extend { }, options, {body: body}
@@ -102,7 +102,7 @@ renderLayout = (body, options, cb) ->
     cb null, body
 
 render = (key, options, cb) ->
-  loglet.log 'mdhbs.render', key, handlebars.partials
+  #loglet.log 'mdhbs.render', key, handlebars.partials
   if handlebars.partials.hasOwnProperty(key)
     try 
       template = handlebars.partials[key]
@@ -114,7 +114,7 @@ render = (key, options, cb) ->
     cb {error: 'unknown_render_template', value: key}
 
 renderKey = (filePath, basePath) ->
-  loglet.log 'mdhbs.renderKey', filePath, basePath
+  #loglet.log 'mdhbs.renderKey', filePath, basePath
   helper = (basePath) ->
     renderRelKey path.relative(basePath, filePath)
   if basePath instanceof Array
@@ -170,7 +170,7 @@ baseViews =
     path.join(process.cwd(), item)
 
 _renderFile = (filePath, options, cb) ->
-  loglet.log 'renderFile', filePath
+  #loglet.log 'renderFile', filePath
   key = renderKey filePath, options?.settings?.views or baseViews
   if handlebars.partials.hasOwnProperty(key)
     render key, options, cb
