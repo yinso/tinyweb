@@ -2,7 +2,7 @@
 author: YC <yinso.chen@gmail.com>
 name: tinyweb
 description: A small extensible web server
-version: 0.2.0
+version: 0.2.1
 repository:
   type: git
   url: git://github.com/yinso/tinyweb.git
@@ -23,6 +23,8 @@ dependencies:
   loglet: '>=0.1.0'
   coffee-bean: '>=0.3.0'
   underscore: '=1.7.0'
+  funclet: '>=0.1.2'
+  async: =0.9.0
   filelet: '>=0.1.2'
   loglet: '>=0.1.2'
   # express middleware that have been separated out.

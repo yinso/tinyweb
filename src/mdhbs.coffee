@@ -7,6 +7,7 @@ loglet = require 'loglet'
 funclet = require 'funclet'
 filelet = require 'filelet'
 watch = require 'watch'
+async = require 'async'
 
 isFunction = (v) ->
   typeof(v) == 'function' or v instanceof Function
@@ -44,6 +45,7 @@ handlebars.registerHelper 'showError', (e) ->
   JSON.stringify e
 
 compileTemplate = (filePath, data, cb) ->
+  loglet.log 'compileTemplate', filePath
   try 
     ext = path.extname filePath
     templateName = path.join path.dirname(filePath), path.basename(filePath, ext)
@@ -62,7 +64,7 @@ compileTemplate = (filePath, data, cb) ->
 loadTemplates = (rootPath, options, cb) ->
   if arguments.length == 2
     cb = options
-    options = { filter: ['.md', '.hbs']}
+    options = { filter: ['.md', '.hbs', '.js', '.coffee']}
   helper = (filePath, next) ->
     funclet
       .start (next) ->
@@ -88,8 +90,8 @@ renderRelKey = (filePath) ->
 
 renderLayout = (body, options, cb) ->
   if options.layout 
-    layoutKey = renderRelKey(options.layout)
-    #loglet.log 'mdhbs.renderLayout', options.layout, layoutKey, handlebars.partials
+    #layoutKey = renderRelKey(options.layout)
+    loglet.log 'mdhbs.renderLayout', options.layout, layoutKey, handlebars.partials
     if handlebars.partials.hasOwnProperty(layoutKey)
       layoutTemplate = handlebars.partials[layoutKey]
       data = _.extend { }, options, {body: body}
@@ -100,7 +102,7 @@ renderLayout = (body, options, cb) ->
     cb null, body
 
 render = (key, options, cb) ->
-  #loglet.log 'mdhbs.render', key
+  loglet.log 'mdhbs.render', key, handlebars.partials
   if handlebars.partials.hasOwnProperty(key)
     try 
       template = handlebars.partials[key]
@@ -112,6 +114,7 @@ render = (key, options, cb) ->
     cb {error: 'unknown_render_template', value: key}
 
 renderKey = (filePath, basePath) ->
+  loglet.log 'mdhbs.renderKey', filePath, basePath
   helper = (basePath) ->
     renderRelKey path.relative(basePath, filePath)
   if basePath instanceof Array
@@ -123,7 +126,7 @@ renderKey = (filePath, basePath) ->
 
 fileFilter = (filePath, stat) ->
   ext = path.extname filePath
-  stat.isDirectory() or ext == '.md' or ext == '.hbs'
+  stat.isDirectory() or ext == '.md' or ext == '.hbs' or ext == '.js' or ext == '.coffee'
 
 monitors = []
 
@@ -162,9 +165,13 @@ loadTemplateHelper = (rootPath, cb) ->
         .catch(cb)
         .done(() -> cb null)
 
-renderFile = (filePath, options, cb) ->
+baseViews = 
+  for item in ['views', 'template']
+    path.join(process.cwd(), item)
+
+_renderFile = (filePath, options, cb) ->
   loglet.log 'renderFile', filePath
-  key = renderKey filePath, options.settings.views
+  key = renderKey filePath, options?.settings?.views or baseViews
   if handlebars.partials.hasOwnProperty(key)
     render key, options, cb
   else if path.extname(filePath) == '.html'
@@ -175,12 +182,25 @@ renderFile = (filePath, options, cb) ->
       else
         renderLayout body, options, cb
   else
-    rootPaths = options.settings.views
+    rootPaths = options?.settings?.views or baseViews
     funclet
       .each(rootPaths, loadTemplateHelper)
       .catch(cb)
       .done () ->
         render key, options, cb
+
+isAbsolute = (filePath) ->
+  filePath.indexOf('/') == 0
+
+renderFile = (filePath, options, cb) ->
+  if isAbsolute(filePath)
+    _renderFile filePath, options, cb
+  else
+    async.detect (path.join(base, filePath) for base in options?.settings?.views or baseViews), fs.exists, (fullPath) ->
+      if not fullPath
+        cb {error: 'unknown_render_template', path: filePath}
+      else
+        _renderFile fullPath, options, cb
 
 module.exports = 
   loadTemplates: loadTemplates

@@ -67,7 +67,8 @@ runWithConfig = (config) ->
         [ views ]
       else
         [ ]
-    views.unshift viewsDir
+    if not _.find views, viewsDir
+      views.unshift viewsDir
     app.set 'views', views
   app.set '_config', config
   app.set 'url', config.url or 'http://localhost'
@@ -76,9 +77,12 @@ runWithConfig = (config) ->
   app.engine 'md', mdhbs.renderFile
   app.engine 'hbs', mdhbs.renderFile
   app.engine 'html', mdhbs.renderFile
+  app.engine 'js', mdhbs.renderFile
+  app.engine 'coffee', mdhbs.renderFile
   app.hbs = mdhbs
   app.addViews path.join(config.BASE_DIR, config.views?.dir or 'views')
-  app.addViews path.join(config.BASE_DIR, config.views?.dir or 'template')
+  app.addViews path.join(config.BASE_DIR, 'template')
+  app.addViews path.join(config.BASE_DIR, 'public')
   app.use cookieParser config.session?.secret or signedSecret
   sessionConfig = 
     genid: (req) -> uuid.v4()
