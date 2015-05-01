@@ -44,6 +44,12 @@ handlebars.registerHelper 'json', (v) ->
 handlebars.registerHelper 'showError', (e) ->
   JSON.stringify e
 
+handlebars.registerHelper 'coalesce', (args...) ->
+  for arg in args 
+    if arg 
+      return arg 
+  return 
+
 compileTemplate = (filePath, data, cb) ->
   #loglet.log 'compileTemplate', filePath
   try 
