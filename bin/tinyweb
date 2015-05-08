@@ -8,6 +8,8 @@ var argv = require('yargs')
   .boolean('static')
   .alias('s', 'static')
   .alias('p', 'port')
+  .default('config', 'tinyweb.yml')
+  .alias('c', 'config')
   .argv;
 
 server.run(argv);

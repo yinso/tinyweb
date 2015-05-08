@@ -16,9 +16,12 @@ registerHelpers = (helpers, scope = helpers.name) ->
   for key, val of helpers
     if helpers.hasOwnProperty(key) and isFunction(val)
       name = "#{scope}:#{key}"
-      handlebars.registerHelper name, val
+      registerHelper name, val
 
-handlebars.registerHelper 'ifCond', (v1, operator, v2, options)->
+registerHelper = (name, proc) ->
+  handlebars.registerHelper name, proc
+
+registerHelper 'ifCond', (v1, operator, v2, options)->
   #loglet.log 'ifConf', v1, operator, v2
   switch operator
     when '==', '==='
@@ -38,17 +41,23 @@ handlebars.registerHelper 'ifCond', (v1, operator, v2, options)->
     else
       return options.inverse @
 
-handlebars.registerHelper 'json', (v) ->
+registerHelper 'json', (v) ->
   JSON.stringify v
 
-handlebars.registerHelper 'showError', (e) ->
+registerHelper 'showError', (e) ->
   JSON.stringify e
 
-handlebars.registerHelper 'coalesce', (args...) ->
+registerHelper 'coalesce', (args...) ->
   for arg in args 
     if arg 
       return arg 
   return 
+
+registerHelper 'toggle', (cond, ifTrue, ifFalse) ->
+  if cond
+    ifTrue
+  else
+    ifFalse
 
 compileTemplate = (filePath, data, cb) ->
   #loglet.log 'compileTemplate', filePath
@@ -214,4 +223,5 @@ module.exports =
   __express: renderFile
   renderFile: renderFile
   registerHelpers: registerHelpers
+  registerHelper: registerHelper
 

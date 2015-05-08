@@ -79,6 +79,7 @@ runWithConfig = (config) ->
   app.engine 'html', mdhbs.renderFile
   app.engine 'js', mdhbs.renderFile
   app.engine 'coffee', mdhbs.renderFile
+  app.renderHelper = mdhbs.registerHelper
   app.hbs = mdhbs
   app.addViews path.join(config.BASE_DIR, config.views?.dir or 'views')
   app.addViews path.join(config.BASE_DIR, 'template')
@@ -140,8 +141,7 @@ run = (argv) ->
     try
       BASE_DIR = process.cwd() # this is the current directory that we are interested in setting up the environment for loading...
       # let's make a static server really quickly... 
-      console.log 'path', BASE_DIR, 'tinyweb.yml', path.join(BASE_DIR, 'tinyweb.yml')
-      configPath = path.join(BASE_DIR, 'tinyweb.yml')
+      configPath = path.join(BASE_DIR, argv.config)
       loglet.debug 'server.config', configPath
       config = bean.readFileSync configPath
       config = _.extend config, argv
