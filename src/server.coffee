@@ -16,6 +16,7 @@ fs = require 'fs'
 filelet = require 'filelet'
 uuid = require 'node-uuid'
 mdhbs = require './mdhbs'
+wapi = require './wapi'
 
 baseErrorHandler = (options) ->
   (err, req, res, next) ->
@@ -97,6 +98,7 @@ runWithConfig = (config) ->
   app.use bodyParser.urlencoded({ extended: true })
   app.use methodOverride()
   app.use express.static(path.join(config.BASE_DIR, 'public'))
+  wapi.init app, config
   initMiddlewares app, config
   initRoutes app, config
   app.use extless()
