@@ -8,6 +8,7 @@ funclet = require 'funclet'
 filelet = require 'filelet'
 watch = require 'watch'
 async = require 'async'
+mockquery = require 'mockquery'
 
 isFunction = (v) ->
   typeof(v) == 'function' or v instanceof Function
@@ -41,6 +42,13 @@ registerHelper 'ifCond', (v1, operator, v2, options)->
     else
       return options.inverse @
 
+registerHelper 'validateError', (context, options) ->
+  console.log(' -- iferror', context, options)
+  if options?.data?.root?.error?.errors and options.data.root.error.errors.hasOwnProperty(context)
+    new handlebars.SafeString '<span class="has-error">' + options.data.root.error.errors[context] + '</span>'
+  else
+    new handlebars.SafeString ""
+
 registerHelper 'json', (v) ->
   JSON.stringify v
 
@@ -48,10 +56,10 @@ registerHelper 'showError', (e) ->
   JSON.stringify e
 
 registerHelper 'coalesce', (args...) ->
-  for arg in args 
-    if arg 
-      return arg 
-  return 
+  for arg in args
+    if arg
+      return arg
+  return
 
 registerHelper 'toggle', (cond, ifTrue, ifFalse) ->
   if cond
@@ -59,14 +67,92 @@ registerHelper 'toggle', (cond, ifTrue, ifFalse) ->
   else
     ifFalse
 
+fileCache = {}
+
+renderParagraph = (renderer) ->
+  dropcapRE = /^\s*<span\s+class\s*=\s"dropcap"*/i
+  notInParaRE = /^\s*<\s*(figure|caption|table|thead|th|tr|td|ul|ol|address|article|aside|audio|blockquote|dd|div|dl|fieldset|footer|form|h1|h2|h3|h4|h5|h6|header|footer|hr|main|nav|noscript|p|pre|section|video)/i
+  (text) ->
+    console.log '--renderPara', text, text.match(dropcapRE), text.match(notInParaRE)
+    if text.match dropcapRE
+      text
+    else if text.match notInParaRE
+      text
+    else
+      "<p>#{text}</p>"
+
+renderHTML = (renderer, options) ->
+  tableCount = 0
+  tablePrefix = () ->
+    if options?.prefix and options?.number
+      tableCount++
+      "#{options.prefix} #{options.number}.#{tableCount} - "
+    else
+      ''
+  (html) ->
+    $ = mockquery.load '<root>' + html + '</root>'
+    $('[markdown="1"]').each (i, elt) ->
+      $(elt).removeAttr 'markdown'
+      inner = elt.html()
+      rendered = marked inner, {renderer: renderer} # for recursive markdown parsing...
+      elt.html rendered
+    $('table').each (i, elt) ->
+      $(elt).addClass('table')
+      captions = $('caption', elt)
+      if captions.length > 1
+        captions.each (i, elt) ->
+          if i == 0
+            $(elt).prepend tablePrefix()
+          else
+            $(elt).remove()
+    $('root').html()
+
+newRenderer = (filePath, data) ->
+  renderer = new marked.Renderer()
+  #renderer.heading = renderHeading(renderer, filePath)
+  #renderer.html = renderHTML(renderer, if parsed.number then { number: parsed.number, prefix: 'Table'} else {})
+  #renderer.link = renderLink(renderer)
+  #renderer.image = renderImage(renderer, if parsed.number then { number: parsed.number, prefix: 'Figure' } else {})
+  renderer.paragraph = renderParagraph(renderer)
+  renderer.html = renderHTML(renderer)
+  renderer
+
+
+parseMarkdown = (filePath, data) ->
+  content = marked data, renderer: newRenderer(filePath, data)
+
+
+
+loadFileSync = (filePath, resolvedPath, stat) ->
+  console.log '------ load.file', filePath, resolvedPath
+  data = fs.readFileSync resolvedPath, 'utf8'
+  console.log '------ load.file.data', data
+  parsed = parseMarkdown filePath, data
+  fileCache[filePath] =
+    mtime: stat.mtime
+    fullPath: resolvedPath
+    parsed: parsed
+  parsed
+
+registerHelper 'loadSync', (filePath) ->
+  resolvedPath = path.join process.cwd(), filePath
+  stat = fs.statSync resolvedPath
+  if fileCache.hasOwnProperty(filePath)
+    if fileCache[filePath].mtime < stat.mtime
+      loadFileSync filePath, resolvedPath, stat
+    else
+      fileCache[filePath].parsed
+  else
+    loadFileSync filePath, resolvedPath, stat
+    
 compileTemplate = (filePath, data, cb) ->
   #loglet.log 'compileTemplate', filePath
-  try 
+  try
     ext = path.extname filePath
     templateName = path.join path.dirname(filePath), path.basename(filePath, ext)
-    template = 
+    template =
       if ext == '.md'
-        inner = handlebars.compile data 
+        inner = handlebars.compile data
         (obj) ->
           marked inner(obj)
       else
@@ -89,7 +175,7 @@ loadTemplates = (rootPath, options, cb) ->
       .catch(next)
       .done () -> next null
   # we can use this function to determine what files to watch..
-  watchOptions = 
+  watchOptions =
     ignoreUnreadableDir: true
     filter: (filePath, stat) -> stat.isFile() and _.find(options.filter, path.extname(filePath))
   #watch.watchTree rootPath, watchOptions, (filePath, curr, prev) ->
@@ -104,7 +190,7 @@ renderRelKey = (filePath) ->
   path.join path.dirname(filePath), path.basename(filePath, path.extname(filePath))
 
 renderLayout = (body, options, cb) ->
-  if options.layout 
+  if options.layout
     layoutKey = renderRelKey(options.layout)
     #loglet.log 'mdhbs.renderLayout', options.layout, layoutKey, handlebars.partials
     if handlebars.partials.hasOwnProperty(layoutKey)
@@ -119,7 +205,7 @@ renderLayout = (body, options, cb) ->
 render = (key, options, cb) ->
   #loglet.log 'mdhbs.render', key, handlebars.partials
   if handlebars.partials.hasOwnProperty(key)
-    try 
+    try
       template = handlebars.partials[key]
       body = template(options)
       renderLayout body, options, cb
@@ -133,7 +219,7 @@ renderKey = (filePath, basePath) ->
   helper = (basePath) ->
     renderRelKey path.relative(basePath, filePath)
   if basePath instanceof Array
-    for base in basePath 
+    for base in basePath
       if filePath.indexOf(base) == 0
         return helper base
   else
@@ -155,7 +241,7 @@ templateEvent = (rootPath, type) ->
         else
           normalized = path.relative rootPath, filePath
           compileTemplate normalized, data, (err) ->
-            if err 
+            if err
               loglet.error "loadTemplate.error", normalized, err
 
 templateCreated = (filePath, stat) ->
@@ -166,7 +252,7 @@ templateChanged = (filePath, stat) ->
 
 loadTemplateHelper = (rootPath, cb) ->
   fs.stat rootPath, (err, stat) ->
-    if err 
+    if err
       cb null
     else
       funclet
@@ -180,7 +266,7 @@ loadTemplateHelper = (rootPath, cb) ->
         .catch(cb)
         .done(() -> cb null)
 
-baseViews = 
+baseViews =
   for item in ['views', 'template']
     path.join(process.cwd(), item)
 
@@ -217,7 +303,7 @@ renderFile = (filePath, options, cb) ->
       else
         _renderFile fullPath, options, cb
 
-module.exports = 
+module.exports =
   loadTemplates: loadTemplates
   handlebars: handlebars
   __express: renderFile

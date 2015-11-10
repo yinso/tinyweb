@@ -2,7 +2,7 @@
 author: YC <yinso.chen@gmail.com>
 name: tinyweb
 description: A small extensible web server
-version: 0.2.5
+version: 0.2.7
 repository:
   type: git
   url: git://github.com/yinso/tinyweb.git
@@ -39,5 +39,6 @@ dependencies:
   marked: =0.3.3
   handlebars: =3.0.2
   lru-cache: =2.6.1
+  mockquery: '^0.2.6'
 devDependencies:
   testlet: '>= 0.2.0'

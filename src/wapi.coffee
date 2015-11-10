@@ -8,12 +8,12 @@ merge = (obj, obj2) ->
   res = {}
   for key, val of obj
     res[key] = val
-  for key, val of obj2 
+  for key, val of obj2
     if res.hasOwnProperty(key)
-      if res[key] instanceof Array 
+      if res[key] instanceof Array
         if obj2[key] instanceof Array
           res[key] = res[key].concat obj2(key)
-        else 
+        else
           res[key].push obj2[key]
       else if res[key] instanceof Object
         if obj2[key] instanceof Object
@@ -49,7 +49,7 @@ class ContinuationTable
     @id = uuid.v4()
     @table = []
   dispose: () ->
-    for cont in @table 
+    for cont in @table
       cont.dispose()
     delete @table
   push: (cont) ->
@@ -67,7 +67,7 @@ class ContinuationTable
   length: () ->
     @table.length
 
-contCache = lruCache 
+contCache = lruCache
   max: 100000
   maxAge: 60 * 60 * 1000
   dispose: (key, table) ->
@@ -87,7 +87,7 @@ contMatch = (req) ->
     if contCache.peek(match[2])
       table = contCache.get match[2]
       id = parseInt(match[3])
-      if table.has id 
+      if table.has id
         return table.get id
       else
         null
@@ -109,14 +109,14 @@ contSuspend = (res, next) ->
     table.makeSuspend next
 
 contFinish = (res, next) ->
-  if res.cont 
+  if res.cont
     res.cont.table.makeFinish next
   else # this doesn't do anything!
     throw new Error("not_in_a_continuation")
 
 contHandle = (cont, req, res) ->
   req.cont = cont
-  res.cont = cont 
+  res.cont = cont
   cont.next req, res
 
 init = (app, config) ->
@@ -152,7 +152,7 @@ init = (app, config) ->
     
     removeDashKeys = (data) ->
       result = {}
-      for key, val of data 
+      for key, val of data
         if not removal.hasOwnProperty(key)
           result[key] = val
       loglet.log 'removeDashKeys', data, removal, result
@@ -173,7 +173,7 @@ init = (app, config) ->
     res.suspendRender = (view, options, next, reqOptions = {}) ->
       state = req.state
       cont = contSuspend res, (req, res) ->
-        for key, val of reqOptions 
+        for key, val of reqOptions
           if req.hasOwnProperty(key)
             req[key] = _.extend req[key], reqOptions
           else
@@ -186,7 +186,7 @@ init = (app, config) ->
     res.suspendRedirect = (next, reqOptions = {}) ->
       state = req.state
       cont = contSuspend res, (req, res) ->
-        for key, val of reqOptions 
+        for key, val of reqOptions
           if req.hasOwnProperty(key)
             req[key] = _.extend req[key], val
           else
@@ -198,7 +198,7 @@ init = (app, config) ->
     res.finishRender = (view, options, next, reqOptions = {}) ->
       state = req.state
       cont = contFinish res, (req, res) ->
-        for key, val of reqOptions 
+        for key, val of reqOptions
           if req.hasOwnProperty(key)
             req[key] = _.extend req[key], reqOptions
           else
@@ -249,7 +249,7 @@ init = (app, config) ->
     
     res.clientRedirect = (uri) ->
       res.setHeader 'X-CLIENT-REDIRECT', uri
-      content = 
+      content =
         """
         <html>
           <body onload="window.location = '#{uri}'">
@@ -263,7 +263,7 @@ init = (app, config) ->
     
     res.result = (obj = {}) ->
       if req.state.continue
-        try 
+        try
           res.goto req.state.continue, obj
         catch e
           loglet.error 'res.result.continue.error', req.url, e
@@ -289,12 +289,12 @@ init = (app, config) ->
       else
         req.query[key]
     
-    cont = contMatch req 
+    cont = contMatch req
     if cont instanceof Continuation
       contHandle cont, req, res
     else
       next null
     
 
-module.exports = 
+module.exports =
   init: init
