@@ -42,10 +42,10 @@ registerHelper 'ifCond', (v1, operator, v2, options)->
     else
       return options.inverse @
 
-registerHelper 'validateError', (context, options) ->
+registerHelper 'errorMessage', (context, options) ->
   console.log(' -- iferror', context, options)
   if options?.data?.root?.error?.errors and options.data.root.error.errors.hasOwnProperty(context)
-    new handlebars.SafeString '<span class="has-error">' + options.data.root.error.errors[context] + '</span>'
+    new handlebars.SafeString options.data.root.error.errors[context]
   else
     new handlebars.SafeString ""
 
